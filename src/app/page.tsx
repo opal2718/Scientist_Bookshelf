@@ -16,7 +16,6 @@ interface Book {
   recommender: string;
   image: string;
 }
-
 export default function Home() {
   const [books, setBooks] = useState<Book[]>([]);
   const [form, setForm] = useState<Omit<Book, 'id'>>({
@@ -26,6 +25,26 @@ export default function Home() {
     recommender: '',
     image: '',
   });
+  function resizeImage(file: File, maxSize = 300): Promise<string> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    const reader = new FileReader();
+    reader.onload = () => {
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const scale = maxSize / Math.max(img.width, img.height);
+        canvas.width = img.width * scale;
+        canvas.height = img.height * scale;
+        const ctx = canvas.getContext('2d')!;
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL('image/jpeg', 0.7)); // 압축률 조정
+      };
+      img.src = reader.result as string;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
 
   // 로컬스토리지에서 불러오기
   useEffect(() => {
@@ -45,14 +64,13 @@ export default function Home() {
     localStorage.setItem('bookshelf', JSON.stringify(books));
   }, [books]);
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () =>
-      setForm((prev) => ({ ...prev, image: reader.result as string }));
-    reader.readAsDataURL(file);
+    const resized = await resizeImage(file);
+    setForm((prev) => ({ ...prev, image: resized }));
   };
+
 
   const handleAddBook = () => {
     if (!form.title.trim() || !form.image) {
@@ -139,7 +157,7 @@ export default function Home() {
         {books.map((book) => (
           <Dialog key={book.id}>
             <DialogTrigger asChild>
-              <Card className="cursor-pointer bg-[#fff9f0] shadow-lg rounded-xl hover:scale-[1.03] transition-transform border border-[#e0d4c0]">
+              <Card className="cursor-pointer bg-[#fff9f0] shadow-lg rounded-xl hover:scale-[1.03] transition-transform border border-[#e0d4c0] scale-[0.75]">
                 <img
                   src={book.image}
                   alt={book.title}
