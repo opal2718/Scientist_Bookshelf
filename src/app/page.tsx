@@ -73,7 +73,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-[#f7f3e9] p-8 font-serif">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-4xl font-bold text-[#5e4630]">📚 과학자의 서재</h1>
+        <h1 className="text-4xl font-bold text-[#5e4630]">📚 대전과학고등학교 과학자의 서재</h1>
 
         {/* 책 추가 버튼 + 입력 모달 */}
         <Dialog>
