@@ -25,7 +25,7 @@ export default function Home() {
     recommender: '',
     image: '',
   });
-  function resizeImage(file: File, maxSize = 300): Promise<string> {
+  function resizeImage(file: File, maxSize = 500): Promise<string> {
   return new Promise((resolve) => {
     const img = new Image();
     const reader = new FileReader();
@@ -61,8 +61,20 @@ export default function Home() {
 
   // 변경되면 저장
   useEffect(() => {
+  try {
     localStorage.setItem('bookshelf', JSON.stringify(books));
-  }, [books]);
+  } catch (e: any) {
+    if (
+      e.name === 'QuotaExceededError' ||
+      e.name === 'NS_ERROR_DOM_QUOTA_REACHED'
+    ) {
+      // 용량 초과 시 저장하지 않고 경고만 출력
+      alert('📦 책을 더 저장할 수 없습니다. (용량 초과)');
+    }
+    // ❌ 그 외 에러도 무시 (조용히 넘어감)
+  }
+}, [books]);
+
 
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -78,7 +90,7 @@ export default function Home() {
       return;
     }
     const newBook: Book = { ...form, id: Date.now() };
-    setBooks([...books, newBook]);
+    setBooks([newBook, ...books]);
     setForm({
       title: '',
       author: '',
@@ -141,6 +153,9 @@ export default function Home() {
                   setForm({ ...form, recommender: e.target.value })
                 }
               />
+              <p className="mt-4 text-sm text-gray-500 text-center">
+                ※ 표지와 제목이 모두 입력되었는지 확인해주세요.
+              </p>
               <Button
                 onClick={handleAddBook}
                 className="bg-[#a47551] hover:bg-[#8b5a3e] text-white"
