@@ -1,103 +1,183 @@
-import Image from "next/image";
+'use client';
+
+import React, { useEffect, useState } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Button } from '@/components/ui/button';
+import { DialogTitle } from '@radix-ui/react-dialog';
+
+interface Book {
+  id: number;
+  title: string;
+  author: string;
+  description: string;
+  recommender: string;
+  image: string;
+}
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [books, setBooks] = useState<Book[]>([]);
+  const [form, setForm] = useState<Omit<Book, 'id'>>({
+    title: '',
+    author: '',
+    description: '',
+    recommender: '',
+    image: '',
+  });
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+  // 로컬스토리지에서 불러오기
+  useEffect(() => {
+    const stored = localStorage.getItem('bookshelf');
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        setBooks(parsed);
+      } catch (e) {
+        console.error('로컬스토리지 파싱 오류:', e);
+      }
+    }
+  }, []);
+
+  // 변경되면 저장
+  useEffect(() => {
+    localStorage.setItem('bookshelf', JSON.stringify(books));
+  }, [books]);
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () =>
+      setForm((prev) => ({ ...prev, image: reader.result as string }));
+    reader.readAsDataURL(file);
+  };
+
+  const handleAddBook = () => {
+    if (!form.title.trim() || !form.image) {
+      alert('책 제목과 표지를 모두 입력해주세요.');
+      return;
+    }
+    const newBook: Book = { ...form, id: Date.now() };
+    setBooks([...books, newBook]);
+    setForm({
+      title: '',
+      author: '',
+      description: '',
+      recommender: '',
+      image: '',
+    });
+  };
+
+  return (
+    <div className="min-h-screen bg-[#f7f3e9] p-8 font-serif">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-4xl font-bold text-[#5e4630]">📚 과학자의 서재</h1>
+
+        {/* 책 추가 버튼 + 입력 모달 */}
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button className="bg-[#a47551] hover:bg-[#8b5a3e] text-white">
+              📕 책 추가하기
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="bg-white rounded-xl border p-6 max-w-lg">
+            <DialogTitle className="text-xl font-bold mb-4 text-[#5e4630]">
+              책 추가하기
+            </DialogTitle>
+            <div className="grid gap-4">
+              <Input
+                type="file"
+                accept="image/*"
+                onChange={handleImageChange}
+              />
+              {form.image && (
+                <img
+                  src={form.image}
+                  className="w-32 h-auto border rounded"
+                  alt="미리보기"
+                />
+              )}
+              <Input
+                placeholder="책 제목"
+                value={form.title}
+                onChange={(e) => setForm({ ...form, title: e.target.value })}
+              />
+              <Input
+                placeholder="저자"
+                value={form.author}
+                onChange={(e) => setForm({ ...form, author: e.target.value })}
+              />
+              <Textarea
+                placeholder="간략한 설명"
+                value={form.description}
+                onChange={(e) =>
+                  setForm({ ...form, description: e.target.value })
+                }
+              />
+              <Input
+                placeholder="추천자 (학번 이름)"
+                value={form.recommender}
+                onChange={(e) =>
+                  setForm({ ...form, recommender: e.target.value })
+                }
+              />
+              <Button
+                onClick={handleAddBook}
+                className="bg-[#a47551] hover:bg-[#8b5a3e] text-white"
+              >
+                추가하기
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      {/* 책장 */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
+        {books.map((book) => (
+          <Dialog key={book.id}>
+            <DialogTrigger asChild>
+              <Card className="cursor-pointer bg-[#fff9f0] shadow-lg rounded-xl hover:scale-[1.03] transition-transform border border-[#e0d4c0]">
+                <img
+                  src={book.image}
+                  alt={book.title}
+                  className="rounded-t-xl w-full object-cover aspect-[2/3]"
+                />
+                <CardContent className="p-2 text-center text-sm text-[#5e4630] font-semibold truncate">
+                  {book.title}
+                </CardContent>
+              </Card>
+            </DialogTrigger>
+            <DialogContent className="bg-white border-none rounded-xl shadow-2xl p-6">
+              <h2 className="text-2xl font-bold text-[#5e4630] mb-2">
+                {book.title}
+              </h2>
+              <p className="text-[#6e5e4a]">
+                <strong>저자:</strong> {book.author}
+              </p>
+              <p className="text-[#6e5e4a]">
+                <strong>설명:</strong> {book.description}
+              </p>
+              <p className="text-[#6e5e4a] mb-4">
+                <strong>추천자:</strong> {book.recommender}
+              </p>
+
+              <Button
+                variant="destructive"
+                className="bg-red-600 hover:bg-red-700 text-white"
+                onClick={() => {
+                  setBooks(prev => prev.filter(b => b.id !== book.id));
+                }}
+              >
+                🗑️ 이 책 삭제하기
+              </Button>
+            </DialogContent>
+
+          </Dialog>
+        ))}
+      </div>
     </div>
   );
 }
